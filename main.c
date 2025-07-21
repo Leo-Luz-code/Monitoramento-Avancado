@@ -97,21 +97,21 @@ const char HTML_BODY[] =
     "<fieldset>"
     "<legend>Calibração (Offsets)</legend>"
     "<div class='form-grid'>"
-    "<div><label for='temp_offset'>Temp. (°C)</label><input type='number' step='0.1' id='temp_offset'></div>"
-    "<div><label for='pressure_offset_kpa'>Pressão (kPa)</label><input type='number' step='0.01' id='pressure_offset_kpa'></div>"
+    "<div><label for='temp_offset'>Temp. (°C)</label><input type='number' step='0.1' id='temp_offset' name='temp_offset'></div>"
+    "<div><label for='pressure_offset_kpa'>Pressão (kPa)</label><input type='number' step='0.01' id='pressure_offset_kpa' name='pressure_offset_kpa'></div>"
     "</div>"
     "</fieldset>"
     "<fieldset>"
     "<legend>Limites de Alerta</legend>"
     "<div class='form-grid'>"
-    "<div><label for='temp_min'>Temp Min</label><input type='number' step='1' id='temp_min'></div>"
-    "<div><label for='temp_max'>Temp Max</label><input type='number' step='1' id='temp_max'></div>"
-    "<div><label for='pressure_min'>Pressão Min</label><input type='number' step='0.1' id='pressure_min'></div>"
-    "<div><label for='pressure_max'>Pressão Max</label><input type='number' step='0.1' id='pressure_max'></div>"
-    "<div><label for='altitude_min'>Altitude Min</label><input type='number' step='10' id='altitude_min'></div>"
-    "<div><label for='altitude_max'>Altitude Max</label><input type='number' step='10' id='altitude_max'></div>"
-    "<div><label for='humidity_min'>Umidade Min</label><input type='number' step='1' id='humidity_min'></div>"
-    "<div><label for='humidity_max'>Umidade Max</label><input type='number' step='1' id='humidity_max'></div>"
+    "<div><label for='temp_min'>Temp Min</label><input type='number' step='1' id='temp_min' name='temp_min'></div>"
+    "<div><label for='temp_max'>Temp Max</label><input type='number' step='1' id='temp_max' name='temp_max'></div>"
+    "<div><label for='pressure_min'>Pressão Min</label><input type='number' step='0.1' id='pressure_min' name='pressure_min'></div>"
+    "<div><label for='pressure_max'>Pressão Max</label><input type='number' step='0.1' id='pressure_max' name='pressure_max'></div>"
+    "<div><label for='altitude_min'>Altitude Min</label><input type='number' step='10' id='altitude_min' name='altitude_min'></div>"
+    "<div><label for='altitude_max'>Altitude Max</label><input type='number' step='10' id='altitude_max' name='altitude_max'></div>"
+    "<div><label for='humidity_min'>Umidade Min</label><input type='number' step='1' id='humidity_min' name='humidity_min'></div>"
+    "<div><label for='humidity_max'>Umidade Max</label><input type='number' step='1' id='humidity_max' name='humidity_max'></div>"
     "</div>"
     "</fieldset>"
     "<button type='submit' style='margin-top: 1rem;'>Salvar Configurações</button>"
@@ -266,7 +266,7 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
 
         // --- CORREÇÃO AQUI ---
         // 1. Crie um buffer maior para o response_body com todas as informações
-        char response_body[1024];
+        char response_body[2048];
         snprintf(response_body, sizeof(response_body),
                  "Request: %s\n"
                  "Configuracoes atualizadas:\n"
