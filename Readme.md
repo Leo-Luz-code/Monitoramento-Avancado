@@ -8,6 +8,7 @@ Um sistema de monitoramento ambiental completo usando o Raspberry Pi Pico, senso
 - ✅ Interface web responsiva com gráficos em tempo real
 - ✅ Alertas visuais (LEDs) e sonoros (buzzer) quando valores saem dos limites
 - ✅ Calibração via interface web (offsets e limites personalizáveis)
+- ✅ Botão para resetar os valores personalizáveis
 - ✅ Display OLED integrado para visualização local
 - ✅ Conexão Wi-Fi (modo STA)
 
