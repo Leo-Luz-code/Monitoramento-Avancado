@@ -32,7 +32,7 @@ Pico GPIO   → Componente
 -----------------------------
 GP0 (SDA)   → BMP280 + AHT20
 GP1 (SCL)   → BMP280 + AHT20
-GP5         → Resetar valores
+GP5         → Botão
 GP14 (SDA)  → OLED Display
 GP15 (SCL)  → OLED Display
 GP11        → LED Verde
