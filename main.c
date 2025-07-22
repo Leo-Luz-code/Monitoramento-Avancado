@@ -15,6 +15,7 @@
 #include "aht20.h"
 #include "bmp280.h"
 #include "ssd1306.h"
+#include "np_led.h"
 #include "font.h"
 
 // --- CONFIGURAÇÕES DE REDE E HARDWARE ---
@@ -26,6 +27,7 @@
 #define LED_GREEN_PIN 11
 #define LED_RED_PIN 13
 #define BUZZER_A 21
+#define MATRIX_LED_PIN 7
 
 #define I2C_PORT_SENSORS i2c0
 #define I2C_SDA_SENSORS 0
@@ -440,6 +442,10 @@ int main()
     gpio_set_dir(LED_RED_PIN, GPIO_OUT);
     ligar_led_verde();
 
+    // Configura a matriz de LEDs Neopixel
+    npInit(MATRIX_LED_PIN);
+    drawSorrisoNormal(); // Desenha sorriso normal
+
     // Configura PWM para o buzzer
     gpio_set_function(BUZZER_A, GPIO_FUNC_PWM);
     slice_buzzer = pwm_gpio_to_slice_num(BUZZER_A);
@@ -529,6 +535,27 @@ int main()
                 ligar_led_vermelho();
                 buzzer_on();
                 last_buzzer_time = time_us_64();
+
+                if (temperature_bmp < temp_min || temperature_bmp > temp_max ||
+                    temperature_aht < temp_min || temperature_aht > temp_max)
+                {
+                    drawT((uint8_t[]){255, 0, 0}); // Desenha T vermelho
+                }
+
+                if (pressure_kpa < pressure_min || pressure_kpa > pressure_max)
+                {
+                    drawP((uint8_t[]){255, 0, 0}); // Desenha P vermelho
+                }
+
+                if (altitude_m < altitude_min || altitude_m > altitude_max)
+                {
+                    drawA((uint8_t[]){255, 0, 0}); // Desenha A vermelho
+                }
+
+                if (humidity_rh < humidity_min || humidity_rh > humidity_max)
+                {
+                    drawU((uint8_t[]){255, 0, 0}); // Desenha U vermelho
+                }
             }
             if (buzzer_state && (time_us_64() - last_buzzer_time) >= 250000)
             {
@@ -538,6 +565,7 @@ int main()
         else
         {
             ligar_led_verde();
+            drawSorrisoNormal(); // Desenha sorriso normal
             buzzer_off();
         }
 
