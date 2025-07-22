@@ -21,6 +21,7 @@
 #define WIFI_SSID "sua_rede_wifi"
 #define WIFI_PASS "sua_senha_wifi"
 
+#define RESET_CONFIG_BUTTON 5
 #define BOOTSEL_BUTTON 6
 #define LED_GREEN_PIN 11
 #define LED_RED_PIN 13
@@ -56,6 +57,9 @@ uint32_t last_buzzer_time = 0;  // Último momento que o buzzer foi acionado
 const float DIVIDER_PWM = 16.0; // Divisor de clock para PWM do buzzer
 const uint16_t PERIOD = 4096;   // Período do PWM para o buzzer
 uint slice_buzzer;              // Slice PWM associado ao buzzer
+
+static volatile uint32_t current_time; // Tempo atual (usado para debounce)
+static volatile uint32_t last_time_button = 0;
 
 // --- CONTEÚDO DA PÁGINA WEB ---
 
@@ -243,8 +247,30 @@ void buzzer_off()
 
 void gpio_irq_handler(uint gpio, uint32_t events)
 {
+    current_time = to_us_since_boot(get_absolute_time());
+
     if (gpio == BOOTSEL_BUTTON)
         reset_usb_boot(0, 0);
+
+    if (current_time - last_time_button > 200000)
+    {
+        last_time_button = current_time;
+
+        if (gpio == RESET_CONFIG_BUTTON)
+        {
+            // Reseta as configurações para os valores padrão
+            temp_offset = 0.0f;
+            pressure_offset_kpa = 0.0f;
+            temp_min = 0.0f;
+            temp_max = 40.0f;
+            pressure_min = 80.0f;
+            pressure_max = 105.0f;
+            altitude_min = -100.0f;
+            altitude_max = 1000.0f;
+            humidity_min = 20.0f;
+            humidity_max = 90.0f;
+        }
+    }
 }
 
 float calculate_altitude_func(float pressure_pa)
@@ -384,11 +410,16 @@ int main()
     stdio_init_all();
     sleep_ms(1000);
 
-    // Inicialização do Hardware e Wi-Fi (sem alterações)
+    // Inicialização do Hardware e Wi-Fi
     gpio_init(BOOTSEL_BUTTON);
     gpio_set_dir(BOOTSEL_BUTTON, GPIO_IN);
     gpio_pull_up(BOOTSEL_BUTTON);
     gpio_set_irq_enabled_with_callback(BOOTSEL_BUTTON, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
+
+    gpio_init(RESET_CONFIG_BUTTON);
+    gpio_set_dir(RESET_CONFIG_BUTTON, GPIO_IN);
+    gpio_pull_up(RESET_CONFIG_BUTTON);
+    gpio_set_irq_enabled(RESET_CONFIG_BUTTON, GPIO_IRQ_EDGE_FALL, true);
 
     i2c_init(I2C_PORT_SENSORS, 400 * 1000);
     gpio_set_function(I2C_SDA_SENSORS, GPIO_FUNC_I2C);
