@@ -21,6 +21,8 @@ Um sistema de monitoramento ambiental completo usando o Raspberry Pi Pico, senso
 | Display OLED SSD1306    | Display I2C 128x64 pixels       |
 | Buzzer ativo            | Alarme sonoro                   |
 | LEDs (verde e vermelho) | Indicadores visuais             |
+| Botão reset             | Resetar configurações           |
+
 
 ## 🔌 Diagrama de Conexões
 
@@ -29,6 +31,7 @@ Pico GPIO   → Componente
 -----------------------------
 GP0 (SDA)   → BMP280 + AHT20
 GP1 (SCL)   → BMP280 + AHT20
+GP5         → Resetar valores
 GP14 (SDA)  → OLED Display
 GP15 (SCL)  → OLED Display
 GP11        → LED Verde
