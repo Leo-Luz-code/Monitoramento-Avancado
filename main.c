@@ -40,7 +40,18 @@
 
 #define SEA_LEVEL_PRESSURE 101325.0
 
+typedef enum
+{
+    ERROR_NONE,
+    ERROR_TEMPERATURE,
+    ERROR_PRESSURE,
+    ERROR_ALTITUDE,
+    ERROR_HUMIDITY
+} ErrorType;
+
 // --- VARIÁVEIS GLOBAIS ---
+
+static ErrorType last_error_displayed = ERROR_NONE;
 
 // Variáveis para armazenar os dados dos sensores (já com offset)
 float temperature_bmp = 0.0f, pressure_kpa = 0.0f, altitude_m = 0.0f;
@@ -64,8 +75,8 @@ static volatile uint32_t current_time; // Tempo atual (usado para debounce)
 static volatile uint32_t last_time_button = 0;
 
 // Variáveis para indicar se tudo está OK
-// static bool last_ok_state = false;
-// static uint64_t last_update_time = 0;
+static bool last_ok_state = false;
+static uint64_t last_update_time = 0;
 
 // --- CONTEÚDO DA PÁGINA WEB ---
 
@@ -225,6 +236,28 @@ const char HTML_BODY[] =
     "</html>";
 
 // --- FUNÇÕES DE REDE E LÓGICA ---
+
+ErrorType get_current_error()
+{
+    if (temperature_bmp < temp_min || temperature_bmp > temp_max ||
+        temperature_aht < temp_min || temperature_aht > temp_max)
+    {
+        return ERROR_TEMPERATURE;
+    }
+    else if (pressure_kpa < pressure_min || pressure_kpa > pressure_max)
+    {
+        return ERROR_PRESSURE;
+    }
+    else if (altitude_m < altitude_min || altitude_m > altitude_max)
+    {
+        return ERROR_ALTITUDE;
+    }
+    else if (humidity_rh < humidity_min || humidity_rh > humidity_max)
+    {
+        return ERROR_HUMIDITY;
+    }
+    return ERROR_NONE;
+}
 
 void ligar_led_verde()
 {
@@ -528,49 +561,79 @@ int main()
         ssd1306_draw_string(&ssd, buffer, 0, 45);
         ssd1306_send_data(&ssd);
 
-        if (temperature_bmp < temp_min || temperature_bmp > temp_max ||
-            temperature_aht < temp_min || temperature_aht > temp_max ||
-            pressure_kpa < pressure_min || pressure_kpa > pressure_max ||
-            altitude_m < altitude_min || altitude_m > altitude_max ||
-            humidity_rh < humidity_min || humidity_rh > humidity_max)
+        bool current_ok = !(temperature_bmp < temp_min || temperature_bmp > temp_max ||
+                            temperature_aht < temp_min || temperature_aht > temp_max ||
+                            pressure_kpa < pressure_min || pressure_kpa > pressure_max ||
+                            altitude_m < altitude_min || altitude_m > altitude_max ||
+                            humidity_rh < humidity_min || humidity_rh > humidity_max);
+
+        // Verifica se o estado mudou, se é hora de atualizar OU se o erro específico mudou
+        if (current_ok != last_ok_state ||
+            (current_ok && (time_us_64() - last_update_time) >= 250000) ||
+            (!current_ok && (get_current_error() != last_error_displayed))) // Erro diferente do último exibido
         {
-            if (!buzzer_state)
+            if (current_ok)
+            {
+                ligar_led_verde();
+                buzzer_off();
+                drawSorrisoNormal();
+                last_error_displayed = ERROR_NONE; // Reseta o último erro exibido
+                last_update_time = time_us_64();
+            }
+            else
             {
                 ligar_led_vermelho();
-                buzzer_on();
-                last_buzzer_time = time_us_64();
+                ErrorType current_error = get_current_error(); // Função que identifica o erro prioritário
 
-                if (temperature_bmp < temp_min || temperature_bmp > temp_max ||
-                    temperature_aht < temp_min || temperature_aht > temp_max)
+                // Só redesenha se o erro atual for diferente do último
+                if (current_error != last_error_displayed)
                 {
-                    drawT((uint8_t[]){255, 0, 0}); // Desenha T vermelho
-                }
+                    switch (current_error)
+                    {
+                    case ERROR_TEMPERATURE:
+                        drawT((uint8_t[]){255, 0, 0});
+                        break;
+                    case ERROR_PRESSURE:
+                        drawP((uint8_t[]){255, 0, 0});
+                        break;
+                    case ERROR_ALTITUDE:
+                        drawA((uint8_t[]){255, 0, 0});
+                        break;
+                    case ERROR_HUMIDITY:
+                        drawU((uint8_t[]){255, 0, 0});
+                        break;
+                    }
 
-                if (pressure_kpa < pressure_min || pressure_kpa > pressure_max)
-                {
-                    drawP((uint8_t[]){255, 0, 0}); // Desenha P vermelho
-                }
-
-                if (altitude_m < altitude_min || altitude_m > altitude_max)
-                {
-                    drawA((uint8_t[]){255, 0, 0}); // Desenha A vermelho
-                }
-
-                if (humidity_rh < humidity_min || humidity_rh > humidity_max)
-                {
-                    drawU((uint8_t[]){255, 0, 0}); // Desenha U vermelho
+                    last_error_displayed = current_error; // Atualiza o último erro exibido
                 }
             }
-            if (buzzer_state && (time_us_64() - last_buzzer_time) >= 250000)
+
+            last_ok_state = current_ok;
+        }
+
+        if (!current_ok) // Se está em estado de erro
+        {
+            uint64_t current_time = time_us_64();
+            uint64_t elapsed = current_time - last_buzzer_time;
+
+            // Ciclo de 500ms (250ms ligado, 250ms desligado)
+            if (buzzer_state && elapsed >= 250000) // Já está ligado há 250ms? Desliga.
+            {
+                buzzer_off();
+                last_buzzer_time = current_time;
+            }
+            else if (!buzzer_state && elapsed >= 250000) // Já está desligado há 250ms? Liga.
+            {
+                buzzer_on();
+                last_buzzer_time = current_time;
+            }
+        }
+        else // Se voltou ao normal, DESLIGA o buzzer
+        {
+            if (buzzer_state) // Se estava ligado, desliga
             {
                 buzzer_off();
             }
-        }
-        else
-        {
-            ligar_led_verde();
-            drawSorrisoNormal(); // Desenha sorriso normal
-            buzzer_off();
         }
 
         sleep_ms(250);

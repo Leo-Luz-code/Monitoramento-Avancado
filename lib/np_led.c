@@ -5,6 +5,13 @@ npLED_t leds[LED_COUNT]; // Buffer de LEDs
 PIO np_pio;
 uint sm;
 
+int SORRISO_NORMAL[5][5][3] = {
+    {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
+    {{0, 0, 0}, {0, 12, 0}, {0, 0, 0}, {0, 12, 0}, {0, 0, 0}},
+    {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
+    {{0, 12, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 12, 0}},
+    {{0, 0, 0}, {0, 12, 0}, {0, 12, 0}, {0, 12, 0}, {0, 0, 0}}};
+
 /**
  * Inicializa a máquina PIO para controle da matriz de LEDs.
  */
@@ -117,18 +124,17 @@ void drawT(uint8_t color[3])
     // Padrão da letra T
     for (int col = 0; col < 5; col++)
     {
-        matriz[0][col][0] = color ? color[0] : 255; // R
-        matriz[0][col][1] = color ? color[1] : 255; // G
-        matriz[0][col][2] = color ? color[2] : 255; // B
+        matriz[0][col][0] = color ? color[0] : 12; // R
+        matriz[0][col][1] = color ? color[1] : 12; // G
+        matriz[0][col][2] = color ? color[2] : 12; // B
     }
     for (int row = 1; row < 5; row++)
     {
-        matriz[row][2][0] = color ? color[0] : 255; // R
-        matriz[row][2][1] = color ? color[1] : 255; // G
-        matriz[row][2][2] = color ? color[2] : 255; // B
+        matriz[row][2][0] = color ? color[0] : 12; // R
+        matriz[row][2][1] = color ? color[1] : 12; // G
+        matriz[row][2][2] = color ? color[2] : 12; // B
     }
 
-    applyBrightnessToMatrix(matriz, 0.05); // Aplica brilho de 5%
     updateMatrix(matriz);
 }
 
@@ -143,24 +149,23 @@ void drawP(uint8_t color[3])
     // Padrão da letra P
     for (int row = 0; row < 5; row++)
     {
-        matriz[row][0][0] = color ? color[0] : 255; // R
-        matriz[row][0][1] = color ? color[1] : 255; // G
-        matriz[row][0][2] = color ? color[2] : 255; // B
+        matriz[row][0][0] = color ? color[0] : 12; // R
+        matriz[row][0][1] = color ? color[1] : 12; // G
+        matriz[row][0][2] = color ? color[2] : 12; // B
     }
     for (int col = 1; col < 4; col++)
     {
-        matriz[0][col][0] = color ? color[0] : 255;
-        matriz[0][col][1] = color ? color[1] : 255;
-        matriz[0][col][2] = color ? color[2] : 255;
-        matriz[2][col][0] = color ? color[0] : 255;
-        matriz[2][col][1] = color ? color[1] : 255;
-        matriz[2][col][2] = color ? color[2] : 255;
+        matriz[0][col][0] = color ? color[0] : 12;
+        matriz[0][col][1] = color ? color[1] : 12;
+        matriz[0][col][2] = color ? color[2] : 12;
+        matriz[2][col][0] = color ? color[0] : 12;
+        matriz[2][col][1] = color ? color[1] : 12;
+        matriz[2][col][2] = color ? color[2] : 12;
     }
-    matriz[1][4][0] = color ? color[0] : 255;
-    matriz[1][4][1] = color ? color[1] : 255;
-    matriz[1][4][2] = color ? color[2] : 255;
+    matriz[1][4][0] = color ? color[0] : 12;
+    matriz[1][4][1] = color ? color[1] : 12;
+    matriz[1][4][2] = color ? color[2] : 12;
 
-    applyBrightnessToMatrix(matriz, 0.05); // Aplica brilho de 5%
     updateMatrix(matriz);
 }
 
@@ -175,24 +180,23 @@ void drawA(uint8_t color[3])
     // Padrão da letra A
     for (int row = 0; row < 5; row++)
     {
-        matriz[row][0][0] = color ? color[0] : 255; // R
-        matriz[row][0][1] = color ? color[1] : 255; // G
-        matriz[row][0][2] = color ? color[2] : 255; // B
-        matriz[row][4][0] = color ? color[0] : 255;
-        matriz[row][4][1] = color ? color[1] : 255;
-        matriz[row][4][2] = color ? color[2] : 255;
+        matriz[row][0][0] = color ? color[0] : 12; // R
+        matriz[row][0][1] = color ? color[1] : 12; // G
+        matriz[row][0][2] = color ? color[2] : 12; // B
+        matriz[row][4][0] = color ? color[0] : 12;
+        matriz[row][4][1] = color ? color[1] : 12;
+        matriz[row][4][2] = color ? color[2] : 12;
     }
     for (int col = 1; col < 4; col++)
     {
-        matriz[0][col][0] = color ? color[0] : 255;
-        matriz[0][col][1] = color ? color[1] : 255;
-        matriz[0][col][2] = color ? color[2] : 255;
-        matriz[2][col][0] = color ? color[0] : 255;
-        matriz[2][col][1] = color ? color[1] : 255;
-        matriz[2][col][2] = color ? color[2] : 255;
+        matriz[0][col][0] = color ? color[0] : 12;
+        matriz[0][col][1] = color ? color[1] : 12;
+        matriz[0][col][2] = color ? color[2] : 12;
+        matriz[2][col][0] = color ? color[0] : 12;
+        matriz[2][col][1] = color ? color[1] : 12;
+        matriz[2][col][2] = color ? color[2] : 12;
     }
 
-    applyBrightnessToMatrix(matriz, 0.05); // Aplica brilho de 5%
     updateMatrix(matriz);
 }
 
@@ -207,21 +211,20 @@ void drawU(uint8_t color[3])
     // Padrão da letra U
     for (int row = 0; row < 4; row++)
     {
-        matriz[row][0][0] = color ? color[0] : 255; // R
-        matriz[row][0][1] = color ? color[1] : 255; // G
-        matriz[row][0][2] = color ? color[2] : 255; // B
-        matriz[row][4][0] = color ? color[0] : 255;
-        matriz[row][4][1] = color ? color[1] : 255;
-        matriz[row][4][2] = color ? color[2] : 255;
+        matriz[row][0][0] = color ? color[0] : 12; // R
+        matriz[row][0][1] = color ? color[1] : 12; // G
+        matriz[row][0][2] = color ? color[2] : 12; // B
+        matriz[row][4][0] = color ? color[0] : 12;
+        matriz[row][4][1] = color ? color[1] : 12;
+        matriz[row][4][2] = color ? color[2] : 12;
     }
     for (int col = 1; col < 4; col++)
     {
-        matriz[4][col][0] = color ? color[0] : 255;
-        matriz[4][col][1] = color ? color[1] : 255;
-        matriz[4][col][2] = color ? color[2] : 255;
+        matriz[4][col][0] = color ? color[0] : 12;
+        matriz[4][col][1] = color ? color[1] : 12;
+        matriz[4][col][2] = color ? color[2] : 12;
     }
 
-    applyBrightnessToMatrix(matriz, 0.05); // Aplica brilho de 5%
     updateMatrix(matriz);
 }
 
@@ -230,13 +233,5 @@ void drawU(uint8_t color[3])
  */
 void drawSorrisoNormal()
 {
-    int SORRISO_NORMAL[5][5][3] = {
-        {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
-        {{0, 0, 0}, {0, 255, 0}, {0, 0, 0}, {0, 255, 0}, {0, 0, 0}},
-        {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
-        {{0, 255, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 255, 0}},
-        {{0, 0, 0}, {0, 255, 0}, {0, 255, 0}, {0, 255, 0}, {0, 0, 0}}};
-
-    applyBrightnessToMatrix(SORRISO_NORMAL, 0.05); // Aplica brilho de 5%
     updateMatrix(SORRISO_NORMAL);
 }
