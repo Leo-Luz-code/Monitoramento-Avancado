@@ -64,8 +64,8 @@ static volatile uint32_t current_time; // Tempo atual (usado para debounce)
 static volatile uint32_t last_time_button = 0;
 
 // Variáveis para indicar se tudo está OK
-static bool last_ok_state = false;
-static uint64_t last_update_time = 0;
+// static bool last_ok_state = false;
+// static uint64_t last_update_time = 0;
 
 // --- CONTEÚDO DA PÁGINA WEB ---
 
