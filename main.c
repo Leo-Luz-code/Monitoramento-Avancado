@@ -9,6 +9,8 @@
 
 #include "lwip/tcp.h"
 #include "hardware/i2c.h"
+#include "hardware/pwm.h"
+#include "hardware/timer.h"
 
 #include "aht20.h"
 #include "bmp280.h"
@@ -16,10 +18,13 @@
 #include "font.h"
 
 // --- CONFIGURAÇÕES DE REDE E HARDWARE ---
-#define WIFI_SSID "PMVC/SEMGI 1"
-#define WIFI_PASS "12cf953e17"
+#define WIFI_SSID "sua_rede_wifi"
+#define WIFI_PASS "sua_senha_wifi"
 
 #define BOOTSEL_BUTTON 6
+#define LED_GREEN_PIN 11
+#define LED_RED_PIN 13
+#define BUZZER_A 21
 
 #define I2C_PORT_SENSORS i2c0
 #define I2C_SDA_SENSORS 0
@@ -41,9 +46,16 @@ float temperature_aht = 0.0f, humidity_rh = 0.0f;
 // Variáveis para as configurações (limites e offsets)
 float temp_offset = 0.0f, pressure_offset_kpa = 0.0f;
 float temp_min = 0.0f, temp_max = 40.0f;
-float pressure_min = 95.0f, pressure_max = 105.0f;
+float pressure_min = 80.0f, pressure_max = 105.0f;
 float altitude_min = -100.0f, altitude_max = 1000.0f;
-float humidity_min = 20.0f, humidity_max = 70.0f;
+float humidity_min = 20.0f, humidity_max = 90.0f;
+
+// Configurações do buzzer
+bool buzzer_state = false;      // Estado atual do buzzer (ligado/desligado)
+uint32_t last_buzzer_time = 0;  // Último momento que o buzzer foi acionado
+const float DIVIDER_PWM = 16.0; // Divisor de clock para PWM do buzzer
+const uint16_t PERIOD = 4096;   // Período do PWM para o buzzer
+uint slice_buzzer;              // Slice PWM associado ao buzzer
 
 // --- CONTEÚDO DA PÁGINA WEB ---
 
@@ -204,6 +216,31 @@ const char HTML_BODY[] =
 
 // --- FUNÇÕES DE REDE E LÓGICA ---
 
+void ligar_led_verde()
+{
+    gpio_put(LED_GREEN_PIN, 1);
+    gpio_put(LED_RED_PIN, 0);
+}
+
+void ligar_led_vermelho()
+{
+    gpio_put(LED_GREEN_PIN, 0);
+    gpio_put(LED_RED_PIN, 1);
+}
+
+// Funções para controle do buzzer
+void buzzer_on()
+{
+    pwm_set_gpio_level(BUZZER_A, 300); // Define nível PWM para ligar o buzzer
+    buzzer_state = true;
+}
+
+void buzzer_off()
+{
+    pwm_set_gpio_level(BUZZER_A, 0); // Desliga o buzzer
+    buzzer_state = false;
+}
+
 void gpio_irq_handler(uint gpio, uint32_t events)
 {
     if (gpio == BOOTSEL_BUTTON)
@@ -249,10 +286,8 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
     struct http_state *hs = malloc(sizeof(struct http_state));
     hs->sent = 0;
 
-    // Bloco corrigido para http_recv
     if (strstr(req, "GET /set_settings?"))
     {
-        // A lógica de parsing permanece a mesma
         parse_float_param(req, "temp_offset=", &temp_offset);
         parse_float_param(req, "pressure_offset_kpa=", &pressure_offset_kpa);
         parse_float_param(req, "temp_min=", &temp_min);
@@ -264,9 +299,7 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
         parse_float_param(req, "humidity_min=", &humidity_min);
         parse_float_param(req, "humidity_max=", &humidity_max);
 
-        // --- CORREÇÃO AQUI ---
-        // 1. Crie um buffer maior para o response_body com todas as informações
-        char response_body[2048];
+        char response_body[1500];
         snprintf(response_body, sizeof(response_body),
                  "Request: %s\n"
                  "Configuracoes atualizadas:\n"
@@ -292,7 +325,6 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
                  humidity_min,
                  humidity_max);
 
-        // 2. Use snprintf para construir a resposta completa e correta
         hs->len = snprintf(hs->response, sizeof(hs->response),
                            "HTTP/1.1 200 OK\r\n"
                            "Content-Type: text/plain\r\n"
@@ -370,6 +402,21 @@ int main()
     gpio_pull_up(I2C_SDA_DISP);
     gpio_pull_up(I2C_SCL_DISP);
 
+    // Configura LEDs como saídas
+    gpio_init(LED_GREEN_PIN);
+    gpio_set_dir(LED_GREEN_PIN, GPIO_OUT);
+    gpio_init(LED_RED_PIN);
+    gpio_set_dir(LED_RED_PIN, GPIO_OUT);
+    ligar_led_verde();
+
+    // Configura PWM para o buzzer
+    gpio_set_function(BUZZER_A, GPIO_FUNC_PWM);
+    slice_buzzer = pwm_gpio_to_slice_num(BUZZER_A);
+    pwm_set_clkdiv(slice_buzzer, DIVIDER_PWM);
+    pwm_set_wrap(slice_buzzer, PERIOD);
+    pwm_set_gpio_level(BUZZER_A, 0);
+    pwm_set_enabled(slice_buzzer, true);
+
     ssd1306_t ssd;
     ssd1306_init(&ssd, WIDTH, HEIGHT, false, DISP_ADDR, I2C_PORT_DISP);
     ssd1306_config(&ssd);
@@ -396,7 +443,7 @@ int main()
     }
 
     char ip_str[24];
-    snprintf(ip_str, sizeof(ip_str), "IP: %s", ip4addr_ntoa(netif_ip4_addr(netif_default)));
+    snprintf(ip_str, sizeof(ip_str), "%s", ip4addr_ntoa(netif_ip4_addr(netif_default)));
     ssd1306_fill(&ssd, false);
     ssd1306_draw_string(&ssd, "WiFi Conectado!", 0, 0);
     ssd1306_draw_string(&ssd, ip_str, 0, 10);
@@ -423,8 +470,8 @@ int main()
         pressure_kpa = (press_pa_raw / 1000.0f) + pressure_offset_kpa;
         altitude_m = calculate_altitude_func(pressure_kpa * 1000); // A função espera Pa
 
-        // Dados do AHT20 (sem offset neste exemplo)
-        temperature_aht = aht_data.temperature;
+        // Dados do AHT20
+        temperature_aht = aht_data.temperature + temp_offset;
         humidity_rh = aht_data.humidity;
 
         // Atualiza display OLED
@@ -440,6 +487,29 @@ int main()
         ssd1306_draw_string(&ssd, buffer, 0, 45);
         ssd1306_send_data(&ssd);
 
-        sleep_ms(2000);
+        if (temperature_bmp < temp_min || temperature_bmp > temp_max ||
+            temperature_aht < temp_min || temperature_aht > temp_max ||
+            pressure_kpa < pressure_min || pressure_kpa > pressure_max ||
+            altitude_m < altitude_min || altitude_m > altitude_max ||
+            humidity_rh < humidity_min || humidity_rh > humidity_max)
+        {
+            if (!buzzer_state)
+            {
+                ligar_led_vermelho();
+                buzzer_on();
+                last_buzzer_time = time_us_64();
+            }
+            if (buzzer_state && (time_us_64() - last_buzzer_time) >= 250000)
+            {
+                buzzer_off();
+            }
+        }
+        else
+        {
+            ligar_led_verde();
+            buzzer_off();
+        }
+
+        sleep_ms(250);
     }
 }
