@@ -6,7 +6,7 @@ Um sistema de monitoramento ambiental completo usando o Raspberry Pi Pico, senso
 
 - ✅ Leitura de **temperatura, pressão, altitude e umidade**
 - ✅ Interface web responsiva com gráficos em tempo real
-- ✅ Alertas visuais (LEDs) e sonoros (buzzer) quando valores saem dos limites
+- ✅ Alertas visuais (LEDs e matriz de LEDs) e sonoros (buzzer) quando valores saem dos limites
 - ✅ Calibração via interface web (offsets e limites personalizáveis)
 - ✅ Botão para resetar os valores personalizáveis
 - ✅ Display OLED integrado para visualização local
@@ -21,7 +21,7 @@ Um sistema de monitoramento ambiental completo usando o Raspberry Pi Pico, senso
 | AHT20                   | Sensor de umidade e temperatura |
 | Display OLED SSD1306    | Display I2C 128x64 pixels       |
 | Buzzer ativo            | Alarme sonoro                   |
-| LEDs (verde e vermelho) | Indicadores visuais             |
+| LEDs (verde, vermelho e matriz) | Indicadores visuais             |
 | Botão reset             | Resetar configurações           |
 
 
@@ -33,6 +33,7 @@ Pico GPIO   → Componente
 GP0 (SDA)   → BMP280 + AHT20
 GP1 (SCL)   → BMP280 + AHT20
 GP5         → Botão
+GP7         → Matriz de LEDs
 GP14 (SDA)  → OLED Display
 GP15 (SCL)  → OLED Display
 GP11        → LED Verde
