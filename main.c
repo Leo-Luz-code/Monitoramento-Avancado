@@ -528,69 +528,49 @@ int main()
         ssd1306_draw_string(&ssd, buffer, 0, 45);
         ssd1306_send_data(&ssd);
 
-        bool current_ok = !(temperature_bmp < temp_min || temperature_bmp > temp_max ||
-                            temperature_aht < temp_min || temperature_aht > temp_max ||
-                            pressure_kpa < pressure_min || pressure_kpa > pressure_max ||
-                            altitude_m < altitude_min || altitude_m > altitude_max ||
-                            humidity_rh < humidity_min || humidity_rh > humidity_max);
-
-        // Verifica se o estado mudou ou se é hora de atualizar
-        if (current_ok != last_ok_state || (current_ok && (time_us_64() - last_update_time) >= 250000))
+        if (temperature_bmp < temp_min || temperature_bmp > temp_max ||
+            temperature_aht < temp_min || temperature_aht > temp_max ||
+            pressure_kpa < pressure_min || pressure_kpa > pressure_max ||
+            altitude_m < altitude_min || altitude_m > altitude_max ||
+            humidity_rh < humidity_min || humidity_rh > humidity_max)
         {
-            if (current_ok)
-            {
-                ligar_led_verde();
-                buzzer_off(); // Desliga o buzzer quando tudo estiver OK
-                drawSorrisoNormal();
-                last_update_time = time_us_64();
-            }
-            else
+            if (!buzzer_state)
             {
                 ligar_led_vermelho();
+                buzzer_on();
+                last_buzzer_time = time_us_64();
 
-                // Desenha os símbolos de erro específicos
                 if (temperature_bmp < temp_min || temperature_bmp > temp_max ||
                     temperature_aht < temp_min || temperature_aht > temp_max)
                 {
-                    drawT((uint8_t[]){255, 0, 0});
+                    drawT((uint8_t[]){255, 0, 0}); // Desenha T vermelho
                 }
 
                 if (pressure_kpa < pressure_min || pressure_kpa > pressure_max)
                 {
-                    drawP((uint8_t[]){255, 0, 0});
+                    drawP((uint8_t[]){255, 0, 0}); // Desenha P vermelho
                 }
 
                 if (altitude_m < altitude_min || altitude_m > altitude_max)
                 {
-                    drawA((uint8_t[]){255, 0, 0});
+                    drawA((uint8_t[]){255, 0, 0}); // Desenha A vermelho
                 }
 
                 if (humidity_rh < humidity_min || humidity_rh > humidity_max)
                 {
-                    drawU((uint8_t[]){255, 0, 0});
+                    drawU((uint8_t[]){255, 0, 0}); // Desenha U vermelho
                 }
             }
-
-            last_ok_state = current_ok;
-        }
-
-        // Lógica do buzzer intermitente
-        if (!current_ok) // Se estiver em estado de erro
-        {
-            uint64_t current_time = time_us_64();
-            uint64_t elapsed = current_time - last_buzzer_time;
-
-            // Ciclo de 500ms (250ms ligado, 250ms desligado)
-            if (buzzer_state && elapsed >= 250000) // Se já está ligado há 250ms
+            if (buzzer_state && (time_us_64() - last_buzzer_time) >= 250000)
             {
                 buzzer_off();
-                last_buzzer_time = current_time;
             }
-            else if (!buzzer_state && elapsed >= 250000) // Se já está desligado há 250ms
-            {
-                buzzer_on();
-                last_buzzer_time = current_time;
-            }
+        }
+        else
+        {
+            ligar_led_verde();
+            drawSorrisoNormal(); // Desenha sorriso normal
+            buzzer_off();
         }
 
         sleep_ms(250);
